@@ -95,7 +95,13 @@ a:hover { color: #ff6666; }
   box-shadow: 0 0 30px rgba(139,0,0,.35);
 }
 .brand { display: flex; align-items: center; gap: .6rem; color: var(--text); font-family: var(--display); font-weight: 900; letter-spacing: .06em; }
-.logo { width: 36px; height: 36px; filter: drop-shadow(0 0 8px rgba(255,26,26,.7)); }
+.logo {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255,26,26,.55);
+  box-shadow: 0 0 10px rgba(255,26,26,.45);
+}
 .nav nav { display: flex; gap: 1rem; margin-left: auto; }
 .nav nav a { color: var(--muted); font-size: .92rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .nav nav a:hover { color: var(--red2); text-shadow: 0 0 12px rgba(255,26,26,.6); }
@@ -325,21 +331,6 @@ h1 {
   position: absolute; inset: 5px; border-radius: 50%; pointer-events: none;
   background: linear-gradient(180deg, transparent 45%, rgba(255,26,26,.45) 100%);
 }
-.eye-glow {
-  position: absolute; inset: 5px; border-radius: 50%; pointer-events: none;
-  /* iris centers on lindsay.jpg cover crop (object-position center 18%) */
-  background:
-    radial-gradient(ellipse 7% 5.5% at 29% 37%, rgba(255,40,40,.95), transparent 70%),
-    radial-gradient(ellipse 5% 4% at 14% 39%, rgba(255,26,26,.9), transparent 70%);
-  mix-blend-mode: screen;
-  opacity: .85;
-  animation: eyes-pulse 2.8s ease-in-out infinite;
-}
-@keyframes eyes-pulse {
-  0%, 100% { opacity: .55; filter: blur(1px); }
-  50% { opacity: .95; filter: blur(0px); }
-}
-
 /* —— Judgment / Cast Into the Pit mini-game —— */
 .judgment-panel { max-width: 720px; }
 .judgment-intro {
