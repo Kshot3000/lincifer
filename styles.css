@@ -327,11 +327,12 @@ h1 {
 }
 .eye-glow {
   position: absolute; inset: 5px; border-radius: 50%; pointer-events: none;
+  /* iris centers on lindsay.jpg cover crop (object-position center 18%) */
   background:
-    radial-gradient(ellipse 18% 10% at 38% 42%, rgba(255,26,26,.85), transparent 70%),
-    radial-gradient(ellipse 18% 10% at 62% 42%, rgba(255,26,26,.85), transparent 70%);
+    radial-gradient(ellipse 7% 5.5% at 29% 37%, rgba(255,40,40,.95), transparent 70%),
+    radial-gradient(ellipse 5% 4% at 14% 39%, rgba(255,26,26,.9), transparent 70%);
   mix-blend-mode: screen;
-  opacity: .75;
+  opacity: .85;
   animation: eyes-pulse 2.8s ease-in-out infinite;
 }
 @keyframes eyes-pulse {
