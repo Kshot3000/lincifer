@@ -660,3 +660,52 @@ h1 {
   .hell-stage { min-height: 360px; height: 420px; }
   .hell-face { width: 78px; height: 98px; }
 }
+
+
+/* Hell ambient music mute control */
+.music-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin-left: .25rem;
+  padding: .45rem .75rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 26, 26, .45);
+  background: rgba(20, 0, 0, .75);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(139, 0, 0, .35);
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  flex-shrink: 0;
+}
+.music-toggle:hover {
+  border-color: rgba(255, 80, 80, .8);
+  box-shadow: 0 0 16px rgba(255, 26, 26, .45);
+  background: rgba(40, 0, 0, .9);
+}
+.music-toggle.is-muted {
+  opacity: .75;
+  border-color: rgba(120, 80, 80, .5);
+  box-shadow: none;
+}
+.music-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+@media (max-width: 520px) {
+  .music-toggle-label { display: none; }
+  .music-toggle { padding: .45rem .55rem; }
+}
+
+/* Floating fallback if nav is crowded — keep nav-integrated primary */
+.music-toggle-float {
+  position: fixed;
+  bottom: 1.1rem;
+  right: 1.1rem;
+  z-index: 70;
+}
