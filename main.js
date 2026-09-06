@@ -12,8 +12,6 @@
   setHref("cta-pump", cfg.pumpUrl);
   setHref("nav-buy", cfg.pumpUrl);
   setHref("link-pump", cfg.pumpUrl);
-  setHref("cta-x", cfg.twitterUrl);
-  setHref("link-x", cfg.twitterUrl);
   setHref("link-tg", cfg.telegramUrl);
 
   const btn = document.getElementById("copy-ca");
@@ -22,7 +20,7 @@
       const text = (cfg.contractAddress || "").trim();
       if (!text || text === "COMING SOON") {
         btn.textContent = "No CA yet";
-        setTimeout(() => (btn.textContent = "Copy"), 1200);
+        setTimeout(() => (btn.textContent = "Copy Sigil"), 1200);
         return;
       }
       try {
@@ -31,7 +29,7 @@
       } catch {
         btn.textContent = "Failed";
       }
-      setTimeout(() => (btn.textContent = "Copy"), 1200);
+      setTimeout(() => (btn.textContent = "Copy Sigil"), 1200);
     });
   }
 })();
