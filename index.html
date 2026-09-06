@@ -39,6 +39,7 @@
     </a>
     <nav>
       <a href="#lore">The Pact</a>
+      <a href="#judgment">Judgment</a>
       <a href="#tokenomics">Blood Math</a>
       <a href="#buy">Summon</a>
       <a href="#roadmap">Descent</a>
@@ -120,6 +121,35 @@
       </div>
     </section>
 
+
+    <section id="judgment" class="panel judgment-panel">
+      <h2>Cast Into the Pit</h2>
+      <p class="judgment-intro muted">
+        Grab Lilith's stolen face. Drag. Throw. Feed the pit.
+        The damned demand a sacrifice.
+      </p>
+      <div class="hell-game" id="hell-game">
+        <div class="hell-hud">
+          <div class="hell-score">Casts: <strong id="hell-score">0</strong></div>
+          <button type="button" class="btn btn-sm" id="hell-reset" hidden>Summon Again</button>
+        </div>
+        <div class="hell-stage" id="hell-stage">
+          <div class="hell-drag-hint" id="hell-hint">Drag her into the flames ↓</div>
+          <div class="hell-face" id="hell-face" role="img" aria-label="Drag Lindsay into the pit" tabindex="0">
+            <img src="lindsay.jpg" alt="" draggable="false" />
+            <div class="hell-face-glow" aria-hidden="true"></div>
+          </div>
+          <div class="hell-pit" id="hell-pit" aria-label="Hell pit drop zone">
+            <canvas id="hell-flames" width="400" height="220" aria-hidden="true"></canvas>
+            <div class="hell-pit-rim" aria-hidden="true"></div>
+            <div class="hell-pit-label">THE PIT</div>
+            <div class="hell-splash" id="hell-splash" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="hell-toast" id="hell-toast" hidden>CAST INTO HELL</div>
+      </div>
+    </section>
+
     <section id="tokenomics" class="panel">
       <h2>Blood Math</h2>
       <div class="grid three">
@@ -173,5 +203,6 @@
 
   <script src="config.js"></script>
   <script src="main.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
