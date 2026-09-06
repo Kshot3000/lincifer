@@ -8,7 +8,7 @@
   --gold: #ffd36a;
   --text: #f0e0e0;
   --muted: #8a6a6a;
-  --card: rgba(12, 0, 0, 0.92);
+  --card: rgba(8, 0, 0, 0.94);
   --line: rgba(255, 26, 26, 0.45);
   --radius: 4px;
   --font: "Inter", system-ui, sans-serif;
@@ -18,6 +18,10 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+main, .nav, footer {
+  position: relative;
+  z-index: 1;
+}
 body {
   margin: 0;
   font-family: var(--font);
@@ -28,13 +32,31 @@ body {
   position: relative;
 }
 
+.hellscape-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -5;
+  opacity: 0.85;
+}
+.hell-mountains {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -4;
+  background:
+    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(255,40,0,.22), transparent 55%),
+    linear-gradient(180deg, transparent 45%, rgba(20,0,0,.35) 100%);
+}
 .bg-glow {
   position: fixed; inset: 0; pointer-events: none; z-index: -3;
   background:
-    radial-gradient(900px 450px at 50% -5%, rgba(139,0,0,.55), transparent 55%),
-    radial-gradient(700px 400px at 85% 25%, rgba(255,26,26,.22), transparent 55%),
-    radial-gradient(600px 350px at 10% 80%, rgba(74,0,0,.5), transparent 60%),
-    radial-gradient(400px 400px at 50% 100%, rgba(139,0,0,.3), transparent 50%);
+    radial-gradient(900px 450px at 50% -5%, rgba(139,0,0,.28), transparent 55%),
+    radial-gradient(700px 400px at 85% 25%, rgba(255,26,26,.12), transparent 55%),
+    radial-gradient(600px 350px at 10% 80%, rgba(74,0,0,.25), transparent 60%),
+    radial-gradient(400px 400px at 50% 100%, rgba(139,0,0,.18), transparent 50%);
 }
 
 .pentagram-bg {
@@ -390,7 +412,7 @@ h1 {
 
 .hell-drag-hint {
   position: absolute;
-  top: 108px;
+  top: 118px;
   left: 0;
   right: 0;
   text-align: center;
@@ -409,44 +431,31 @@ h1 {
 
 .hell-face {
   position: absolute;
-  width: clamp(84px, 22vw, 110px);
-  height: clamp(84px, 22vw, 110px);
-  border-radius: 50%;
+  width: clamp(72px, 18vw, 96px);
+  height: clamp(90px, 22.5vw, 120px);
+  border-radius: 10px;
   z-index: 10;
   cursor: grab;
   touch-action: none;
   will-change: left, top, transform;
-  padding: 3px;
-  background: linear-gradient(145deg, #ff1a1a, #1a0000 50%, #8b0000);
+  padding: 2px;
+  background: transparent;
   box-shadow:
-    0 0 18px rgba(255,26,26,.65),
-    0 8px 24px rgba(0,0,0,.55);
+    0 0 16px rgba(255,26,26,.45),
+    0 8px 20px rgba(0,0,0,.45);
+  filter: drop-shadow(0 0 8px rgba(255,40,0,.35));
 }
-.hell-face img {
+.hell-face .hell-lindsay {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 18%;
-  border-radius: 50%;
   pointer-events: none;
-  filter: contrast(1.15) saturate(0.4) brightness(0.6);
-}
-.hell-face-glow {
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  pointer-events: none;
-  box-shadow: inset 0 0 20px rgba(0,0,0,.6);
-  background: radial-gradient(circle at 50% 30%, transparent 40%, rgba(40,0,0,.5) 100%);
+  overflow: visible;
 }
 .hell-face.is-dragging {
   cursor: grabbing;
   z-index: 20;
-  box-shadow:
-    0 0 30px rgba(255,26,26,.95),
-    0 12px 32px rgba(0,0,0,.7);
-  filter: brightness(1.1);
+  filter: drop-shadow(0 0 16px rgba(255,60,0,.85)) brightness(1.08);
 }
 .hell-face.is-flying {
   cursor: grabbing;
@@ -589,7 +598,65 @@ h1 {
   100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
 }
 
+
+.hell-scream {
+  position: absolute;
+  z-index: 25;
+  pointer-events: none;
+  max-width: min(220px, 70vw);
+  padding: .45rem .7rem .55rem;
+  background: #fff8f0;
+  color: #1a0500;
+  border: 3px solid #1a0500;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 2px #ff1a1a,
+    0 8px 20px rgba(0,0,0,.55);
+  opacity: 0;
+  transform: scale(0.4) rotate(-6deg);
+  transition: opacity .18s ease, transform .22s cubic-bezier(.2,1.4,.4,1);
+}
+.hell-scream.show {
+  opacity: 1;
+  transform: scale(1) rotate(-2deg);
+}
+.hell-scream.hide {
+  opacity: 0;
+  transform: scale(0.85) translateY(-12px);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.hell-scream-text {
+  display: block;
+  font-family: var(--horror), Creepster, cursive;
+  font-size: clamp(0.95rem, 3.6vw, 1.25rem);
+  letter-spacing: .04em;
+  line-height: 1.15;
+  text-align: center;
+  color: #8b0000;
+  text-shadow: 0 1px 0 #fff, 0 0 8px rgba(255,26,26,.35);
+  animation: scream-jitter .35s steps(2) infinite;
+}
+@keyframes scream-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(1px, -1px); }
+  50% { transform: translate(-1px, 1px); }
+  75% { transform: translate(1px, 0); }
+}
+.hell-scream-tail {
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: #fff8f0;
+  border-right: 3px solid #1a0500;
+  border-bottom: 3px solid #1a0500;
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 0 #ff1a1a;
+}
+
 @media (max-width: 480px) {
   .hell-stage { min-height: 360px; height: 420px; }
-  .hell-face { width: 92px; height: 92px; }
+  .hell-face { width: 78px; height: 98px; }
 }
