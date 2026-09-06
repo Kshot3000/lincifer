@@ -1,5 +1,5 @@
 // Update these after Pump.fun launch
-window.CLANCIFER = {
+window.LINCIFER = {
   contractAddress: "COMING SOON",
   pumpUrl: "#pump",          // e.g. https://pump.fun/coin/<mint>
   twitterUrl: "#community",  // e.g. https://x.com/yourhandle

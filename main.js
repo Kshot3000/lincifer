@@ -1,5 +1,5 @@
 (function () {
-  const cfg = window.CLANCIFER || {};
+  const cfg = window.LINCIFER || {};
   const ca = document.getElementById("ca");
   const year = document.getElementById("year");
   if (year) year.textContent = new Date().getFullYear();

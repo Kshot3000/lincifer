@@ -1,4 +1,4 @@
-# Clancifer ($CLANCIFER)
+# Lincifer ($LINCIFER)
 
 Meme coin landing page for a Pump.fun / Solana fair launch.
 
@@ -24,8 +24,8 @@ Edit `config.js`:
 
 1. Wallet with a little SOL (Phantom/Solflare)
 2. Go to https://pump.fun → Create
-3. Name: `Clancifer`
-4. Ticker: `CLANCIFER`
+3. Name: `Lincifer`
+4. Ticker: `LINCIFER`
 5. Description: short meme lore (see site tagline)
 6. Image: square logo (~1000×1000 PNG)
 7. Website: your deployed URL for this site
