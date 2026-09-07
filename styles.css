@@ -664,3 +664,44 @@ h1 {
   right: 1.1rem;
   z-index: 70;
 }
+
+
+/* Non-blocking autoplay unlock hint */
+.music-unlock-hint {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  padding: .55rem 1rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 26, 26, .4);
+  background: rgba(12, 0, 0, .88);
+  color: #f0c8c8;
+  font-family: var(--font);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  box-shadow: 0 0 18px rgba(139, 0, 0, .45);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: music-hint-pulse 2.4s ease-in-out infinite;
+}
+.music-unlock-hint[hidden] {
+  display: none !important;
+}
+@keyframes music-hint-pulse {
+  0%, 100% { opacity: .72; }
+  50% { opacity: 1; }
+}
+@media (max-width: 520px) {
+  .music-unlock-hint {
+    font-size: .7rem;
+    padding: .45rem .75rem;
+    bottom: 1rem;
+    white-space: normal;
+    text-align: center;
+    max-width: calc(100vw - 2rem);
+  }
+}

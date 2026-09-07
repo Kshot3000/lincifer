@@ -2,6 +2,10 @@
  * Procedural hell ambient MUSIC via Web Audio API.
  * Dark minor drones, evolving pads, distant choir, tonal tritone stabs —
  * not filtered noise / static.
+ *
+ * Autoplay: create context + start graph on load; if the browser blocks
+ * AudioContext.resume(), any first gesture (pointer/touch/key/scroll/wheel)
+ * unlocks playback — not only the mute button.
  */
 (function () {
   const STORAGE_KEY = "lincifer-music-muted";
@@ -13,6 +17,16 @@
   let muted = false;
   let nodes = [];
   let timers = [];
+  let gestureBound = false;
+  let awaitingUnlock = false;
+
+  const GESTURE_EVENTS = [
+    "pointerdown",
+    "touchstart",
+    "keydown",
+    "scroll",
+    "wheel",
+  ];
 
   try {
     muted = localStorage.getItem(STORAGE_KEY) === "1";
@@ -281,18 +295,49 @@
     }
   }
 
+  function isRunning() {
+    return !!(audioCtx && audioCtx.state === "running");
+  }
+
+  function showUnlockHint() {
+    if (muted) return;
+    const el = document.getElementById("music-unlock-hint");
+    if (el) el.hidden = false;
+  }
+
+  function hideUnlockHint() {
+    const el = document.getElementById("music-unlock-hint");
+    if (el) el.hidden = true;
+  }
+
+  function onAudioUnlocked() {
+    awaitingUnlock = false;
+    hideUnlockHint();
+    unbindGestureUnlock();
+    applyMute();
+  }
+
+  function resumeContext() {
+    if (!audioCtx) return Promise.resolve(false);
+    if (audioCtx.state === "running") return Promise.resolve(true);
+    return audioCtx
+      .resume()
+      .then(() => audioCtx.state === "running")
+      .catch(() => false);
+  }
+
   function startMusic() {
     const ctx = ensureContext();
-    if (!ctx) return false;
-    if (ctx.state === "suspended") {
-      ctx.resume().catch(() => {});
-    }
+    if (!ctx) return Promise.resolve(false);
     if (!started) {
       buildHellscape(ctx);
       started = true;
     }
     applyMute();
-    return true;
+    return resumeContext().then((ok) => {
+      if (ok) onAudioUnlocked();
+      return ok;
+    });
   }
 
   function applyMute() {
@@ -309,7 +354,17 @@
     } catch (_) {}
     applyMute();
     updateButton();
-    if (!muted) startMusic();
+    if (!muted) {
+      startMusic().then((ok) => {
+        if (!ok) {
+          awaitingUnlock = true;
+          showUnlockHint();
+          bindGestureUnlock();
+        }
+      });
+    } else {
+      hideUnlockHint();
+    }
   }
 
   function toggleMute() {
@@ -329,19 +384,37 @@
     btn.classList.toggle("is-muted", muted);
   }
 
-  function onFirstGesture() {
+  function onFirstGesture(ev) {
+    // Mute button owns its own click path (avoid start+toggle race)
+    if (
+      ev &&
+      ev.type !== "scroll" &&
+      ev.type !== "wheel" &&
+      ev.target &&
+      ev.target.closest &&
+      ev.target.closest("#music-toggle")
+    ) {
+      return;
+    }
     startMusic();
   }
 
+  function unbindGestureUnlock() {
+    if (!gestureBound) return;
+    GESTURE_EVENTS.forEach((e) => {
+      window.removeEventListener(e, onFirstGesture, true);
+      document.removeEventListener(e, onFirstGesture, true);
+    });
+    gestureBound = false;
+  }
+
   function bindGestureUnlock() {
-    const events = ["pointerdown", "keydown", "touchstart", "click"];
-    const once = (ev) => {
-      // Let the mute button own its click (avoid start+toggle race)
-      if (ev.target && ev.target.closest && ev.target.closest("#music-toggle")) return;
-      events.forEach((e) => document.removeEventListener(e, once, true));
-      onFirstGesture();
-    };
-    events.forEach((e) => document.addEventListener(e, once, { capture: true, passive: true }));
+    if (gestureBound) return;
+    gestureBound = true;
+    GESTURE_EVENTS.forEach((e) => {
+      window.addEventListener(e, onFirstGesture, { capture: true, passive: true });
+      document.addEventListener(e, onFirstGesture, { capture: true, passive: true });
+    });
   }
 
   function initButton() {
@@ -350,16 +423,40 @@
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const firstUnlock = !started;
-      startMusic();
-      // First press while default-unmuted: unlock & play (don't immediately mute)
-      if (firstUnlock && !muted) {
+      // If autoplay blocked and user is unmuted, first click only unlocks —
+      // do not immediately mute (fixes mute→unmute dance).
+      if (!muted && audioCtx && audioCtx.state === "suspended") {
+        startMusic();
+        updateButton();
+        return;
+      }
+      if (!muted && !isRunning() && started && awaitingUnlock) {
+        startMusic();
         updateButton();
         return;
       }
       toggleMute();
     });
     updateButton();
+  }
+
+  /**
+   * Boot: always create context + start graph (even if muted at gain 0),
+   * try resume immediately; if blocked and not user-muted, arm gesture unlock + hint.
+   */
+  function boot() {
+    initButton();
+    ensureContext();
+    startMusic().then((ok) => {
+      if (ok || muted) {
+        hideUnlockHint();
+        return;
+      }
+      // Autoplay blocked — wait for any first user gesture
+      awaitingUnlock = true;
+      showUnlockHint();
+      bindGestureUnlock();
+    });
   }
 
   // Expose tiny API for debugging / other modules
@@ -369,20 +466,26 @@
     setMuted,
     isMuted: () => muted,
     isStarted: () => started,
+    isRunning,
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      initButton();
-      bindGestureUnlock();
-      // Try autoplay; browsers may block until gesture
-      if (!muted) {
-        startMusic();
-      }
-    });
+    document.addEventListener("DOMContentLoaded", boot);
   } else {
-    initButton();
-    bindGestureUnlock();
-    if (!muted) startMusic();
+    boot();
   }
+
+  // Also try again on full load (some browsers unlock later)
+  window.addEventListener("load", () => {
+    if (!audioCtx) ensureContext();
+    if (!started || (audioCtx && audioCtx.state === "suspended" && !muted)) {
+      startMusic().then((ok) => {
+        if (!ok && !muted) {
+          awaitingUnlock = true;
+          showUnlockHint();
+          bindGestureUnlock();
+        }
+      });
+    }
+  });
 })();
