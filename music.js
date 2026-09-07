@@ -1,6 +1,7 @@
 /**
- * Procedural hell ambient bed via Web Audio API.
- * No external audio files — drones, dissonance, rumble, filtered noise.
+ * Procedural hell ambient MUSIC via Web Audio API.
+ * Dark minor drones, evolving pads, distant choir, tonal tritone stabs —
+ * not filtered noise / static.
  */
 (function () {
   const STORAGE_KEY = "lincifer-music-muted";
@@ -11,6 +12,7 @@
   let started = false;
   let muted = false;
   let nodes = [];
+  let timers = [];
 
   try {
     muted = localStorage.getItem(STORAGE_KEY) === "1";
@@ -29,18 +31,9 @@
     return audioCtx;
   }
 
-  function makeNoiseBuffer(ctx, seconds) {
-    const len = Math.floor(ctx.sampleRate * seconds);
-    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < len; i++) {
-      // Brown-ish noise for deeper rumble
-      const white = Math.random() * 2 - 1;
-      last = (last + 0.02 * white) / 1.02;
-      data[i] = last * 3.5;
-    }
-    return buf;
+  function track(node) {
+    nodes.push(node);
+    return node;
   }
 
   function addOsc(ctx, type, freq, gainVal, detune) {
@@ -48,12 +41,13 @@
     const g = ctx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    if (detune) osc.detune.value = detune;
+    if (typeof detune === "number") osc.detune.value = detune;
     g.gain.value = gainVal;
     osc.connect(g);
     g.connect(masterGain);
     osc.start();
-    nodes.push(osc, g);
+    track(osc);
+    track(g);
     return { osc, g };
   }
 
@@ -67,103 +61,224 @@
     g.connect(targetParam);
     if (typeof base === "number") targetParam.value = base;
     lfo.start();
-    nodes.push(lfo, g);
+    track(lfo);
+    track(g);
+    return { lfo, g };
+  }
+
+  /** Soft lowpass on a gain bus so pads stay warm, never harsh. */
+  function createPadBus(ctx, cutoff) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = cutoff;
+    filter.Q.value = 0.6;
+    const g = ctx.createGain();
+    g.gain.value = 1;
+    filter.connect(g);
+    g.connect(masterGain);
+    track(filter);
+    track(g);
+    return { filter, g };
+  }
+
+  function addOscToBus(ctx, bus, type, freq, gainVal, detune) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    if (typeof detune === "number") osc.detune.value = detune;
+    g.gain.value = gainVal;
+    osc.connect(g);
+    g.connect(bus.filter);
+    osc.start();
+    track(osc);
+    track(g);
+    return { osc, g };
+  }
+
+  function scheduleTimeout(fn, ms) {
+    const id = setTimeout(fn, ms);
+    timers.push(id);
+    return id;
   }
 
   function buildHellscape(ctx) {
-    // Sub rumble / heartbeat of the pit
-    addOsc(ctx, "sine", 36, 0.22);
-    addOsc(ctx, "sine", 48, 0.14, -8);
-    addOsc(ctx, "triangle", 55, 0.08);
+    // --- Dark minor foundation: D minor (D2 / F2 / A2) + low fifth ---
+    // Frequencies (Hz): D2=73.42, F2=87.31, A2=110, A1=55, D1=36.71
+    const chordBus = createPadBus(ctx, 900);
 
-    // Dark dissonant drones (tritone + minor seconds)
-    const drones = [
-      { f: 73.42, g: 0.09, d: 0 },    // D2
-      { f: 87.31, g: 0.07, d: 6 },    // F2 slightly sharp
-      { f: 103.83, g: 0.06, d: -4 },  // Ab2
-      { f: 110, g: 0.05, d: 12 },     // A2
-      { f: 146.83, g: 0.04, d: -10 }, // D3
-      { f: 207.65, g: 0.03, d: 18 },  // Ab3 dissonant
+    const foundation = [
+      { type: "sine", f: 36.71, g: 0.18, d: 0 },     // D1 sub
+      { type: "sine", f: 55.0, g: 0.12, d: -3 },      // A1
+      { type: "sine", f: 73.42, g: 0.14, d: 0 },      // D2
+      { type: "triangle", f: 73.42, g: 0.06, d: 4 },  // D2 soft triangle
+      { type: "sine", f: 87.31, g: 0.11, d: -2 },     // F2
+      { type: "triangle", f: 87.31, g: 0.05, d: 6 },  // F2 soft
+      { type: "sine", f: 110.0, g: 0.09, d: 0 },      // A2
+      { type: "triangle", f: 110.0, g: 0.04, d: -5 }, // A2 soft
     ];
-    drones.forEach(({ f, g, d }) => {
-      const { osc, g: gainNode } = addOsc(ctx, "sawtooth", f, g, d);
-      // Slow filter-ish amplitude wobble
-      addLfo(ctx, gainNode.gain, 0.07 + Math.random() * 0.12, g * 0.35, g);
-      addLfo(ctx, osc.detune, 0.03 + Math.random() * 0.05, 18 + Math.random() * 25, d);
+
+    foundation.forEach(({ type, f, g, d }) => {
+      const { osc, g: gainNode } = addOscToBus(ctx, chordBus, type, f, g, d);
+      // Slow LFO detune — organic drift, not vibrato chatter
+      addLfo(ctx, osc.detune, 0.02 + Math.random() * 0.03, 6 + Math.random() * 10, d);
+      // Very slow amplitude breathe
+      addLfo(ctx, gainNode.gain, 0.015 + Math.random() * 0.025, g * 0.22, g);
     });
 
-    // High eerie whisps (quiet sine clusters)
-    [415.3, 466.16, 554.37].forEach((f, i) => {
-      const { g } = addOsc(ctx, "sine", f, 0.012 + i * 0.004, (i - 1) * 14);
-      addLfo(ctx, g.gain, 0.11 + i * 0.04, 0.008, 0.012 + i * 0.004);
+    // Slow evolving lowpass on the whole chord pad
+    addLfo(ctx, chordBus.filter.frequency, 0.018, 280, 900);
+
+    // --- Slow evolving pad (higher partials of the same chord, long swell) ---
+    const padBus = createPadBus(ctx, 1400);
+    const padVoices = [
+      { f: 146.83, g: 0.035, d: -8 },  // D3
+      { f: 174.61, g: 0.028, d: 5 },   // F3
+      { f: 220.0, g: 0.022, d: -4 },   // A3
+      { f: 293.66, g: 0.014, d: 10 },  // D4 (quiet)
+    ];
+
+    padVoices.forEach(({ f, g, d }, i) => {
+      const { osc, g: gainNode } = addOscToBus(ctx, padBus, "sine", f, 0.0001, d);
+      // Long attack into resting level
+      const now = ctx.currentTime;
+      const attack = 4 + i * 1.5;
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.linearRampToValueAtTime(g, now + attack);
+      addLfo(ctx, osc.detune, 0.025 + i * 0.01, 8 + i * 3, d);
+      addLfo(ctx, gainNode.gain, 0.02 + i * 0.008, g * 0.4, g);
     });
+    addLfo(ctx, padBus.filter.frequency, 0.012, 350, 1400);
 
-    // Filtered noise bed (wind / fire roar / screams-in-distance)
-    const noiseSrc = ctx.createBufferSource();
-    noiseSrc.buffer = makeNoiseBuffer(ctx, 4);
-    noiseSrc.loop = true;
+    // --- Distant low "choir" — stacked sines + gentle vibrato ---
+    const choirBus = createPadBus(ctx, 1100);
+    const choirNotes = [
+      { f: 146.83, g: 0.018 }, // D3
+      { f: 174.61, g: 0.015 }, // F3
+      { f: 207.65, g: 0.012 }, // Ab3 (flat 5th — hellish color)
+      { f: 220.0, g: 0.014 },  // A3
+    ];
 
-    const hp = ctx.createBiquadFilter();
-    hp.type = "highpass";
-    hp.frequency.value = 80;
-    hp.Q.value = 0.5;
+    choirNotes.forEach(({ f, g }, i) => {
+      // Three slightly detuned sines per note = choir thickness
+      [-9, 0, 11].forEach((cents, j) => {
+        const voiceGain = g * (j === 1 ? 1 : 0.55);
+        const { osc, g: gainNode } = addOscToBus(
+          ctx,
+          choirBus,
+          "sine",
+          f,
+          voiceGain * 0.0001,
+          cents
+        );
+        const now = ctx.currentTime;
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.linearRampToValueAtTime(voiceGain, now + 6 + i);
+        // Slow vibrato (choir-ish)
+        addLfo(ctx, osc.detune, 4.2 + j * 0.35, 4 + j, cents);
+        // Slow amplitude shimmer
+        addLfo(ctx, gainNode.gain, 0.03 + i * 0.01, voiceGain * 0.25, voiceGain);
+      });
+    });
+    addLfo(ctx, choirBus.filter.frequency, 0.015, 200, 1100);
+    // Keep choir quiet overall
+    choirBus.g.gain.value = 0.85;
 
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 420;
-    bp.Q.value = 0.7;
-
-    const lp = ctx.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.value = 1600;
-    lp.Q.value = 0.8;
-
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.11;
-
-    noiseSrc.connect(hp);
-    hp.connect(bp);
-    bp.connect(lp);
-    lp.connect(noiseGain);
-    noiseGain.connect(masterGain);
-    noiseSrc.start();
-    nodes.push(noiseSrc, hp, bp, lp, noiseGain);
-
-    addLfo(ctx, bp.frequency, 0.08, 180, 420);
-    addLfo(ctx, lp.frequency, 0.05, 400, 1600);
-    addLfo(ctx, noiseGain.gain, 0.04, 0.04, 0.11);
-
-    // Occasional dissonant "demon growl" pulses via gain swell on a low osc
-    const growl = addOsc(ctx, "sawtooth", 62, 0.001);
-    const swell = growl.g;
-    function scheduleGrowl() {
+    // --- Occasional dissonant TRITONE stabs (tonal, not noise) ---
+    // Tritone above D: Ab (G#). Pair D3 + Ab3 / D2 + Ab2 as short tonal hits.
+    function scheduleStab() {
       if (!audioCtx || audioCtx.state === "closed") return;
       const now = audioCtx.currentTime;
-      const peak = 0.06 + Math.random() * 0.05;
-      const wait = 4 + Math.random() * 8;
-      swell.gain.cancelScheduledValues(now);
-      swell.gain.setValueAtTime(0.001, now);
-      swell.gain.linearRampToValueAtTime(peak, now + 0.8);
-      swell.gain.exponentialRampToValueAtTime(0.001, now + 2.2 + Math.random());
-      growl.osc.frequency.setValueAtTime(50 + Math.random() * 30, now);
-      setTimeout(scheduleGrowl, wait * 1000);
-    }
-    scheduleGrowl();
+      const root = 73.42 * (Math.random() < 0.5 ? 1 : 2); // D2 or D3
+      const tri = root * Math.pow(2, 6 / 12); // +tritone
+      const peak = 0.045 + Math.random() * 0.035;
+      const dur = 0.9 + Math.random() * 1.4;
 
-    // Distant metallic scrape / dissonant pulse
-    const pulse = addOsc(ctx, "square", 98, 0.001);
-    function schedulePulse() {
+      [root, tri].forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        const lp = audioCtx.createBiquadFilter();
+        osc.type = idx === 0 ? "sine" : "triangle";
+        osc.frequency.value = freq;
+        lp.type = "lowpass";
+        lp.frequency.value = 1200;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.linearRampToValueAtTime(peak * (idx === 0 ? 1 : 0.75), now + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(lp);
+        lp.connect(g);
+        g.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + dur + 0.05);
+      });
+
+      const wait = (7 + Math.random() * 11) * 1000;
+      scheduleTimeout(scheduleStab, wait);
+    }
+    scheduleTimeout(scheduleStab, 3500 + Math.random() * 2500);
+
+    // Occasional darker minor-second / flat-five swell (still tonal)
+    function scheduleDissonantSwell() {
       if (!audioCtx || audioCtx.state === "closed") return;
       const now = audioCtx.currentTime;
-      const wait = 6 + Math.random() * 10;
-      pulse.g.gain.cancelScheduledValues(now);
-      pulse.g.gain.setValueAtTime(0.001, now);
-      pulse.g.gain.linearRampToValueAtTime(0.025, now + 0.05);
-      pulse.g.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      pulse.osc.frequency.setValueAtTime(80 + Math.random() * 60, now);
-      setTimeout(schedulePulse, wait * 1000);
+      const base = 55 + Math.random() * 20; // around A1–ish
+      const peak = 0.04 + Math.random() * 0.03;
+      const attack = 1.2 + Math.random() * 1.5;
+      const hold = 1.5 + Math.random();
+      const release = 2.5 + Math.random() * 2;
+
+      const freqs = [base, base * Math.pow(2, 1 / 12), base * Math.pow(2, 6 / 12)];
+      freqs.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = i === 0 ? "sine" : "triangle";
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.linearRampToValueAtTime(peak * (0.7 - i * 0.15), now + attack);
+        g.gain.setValueAtTime(peak * (0.7 - i * 0.15), now + attack + hold);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + attack + hold + release);
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + attack + hold + release + 0.1);
+      });
+
+      scheduleTimeout(scheduleDissonantSwell, (12 + Math.random() * 16) * 1000);
     }
-    schedulePulse();
+    scheduleTimeout(scheduleDissonantSwell, 8000 + Math.random() * 4000);
+
+    // --- Extremely subtle room tone (optional quiet lowpassed noise) ---
+    // Gain kept tiny so it never reads as static; heavily lowpassed.
+    try {
+      const seconds = 3;
+      const len = Math.floor(ctx.sampleRate * seconds);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        const white = Math.random() * 2 - 1;
+        last = (last + 0.015 * white) / 1.015;
+        data[i] = last * 2.2;
+      }
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = buf;
+      noiseSrc.loop = true;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 180;
+      lp.Q.value = 0.5;
+      const ng = ctx.createGain();
+      ng.gain.value = 0.012; // barely audible bed
+      noiseSrc.connect(lp);
+      lp.connect(ng);
+      ng.connect(masterGain);
+      noiseSrc.start();
+      track(noiseSrc);
+      track(lp);
+      track(ng);
+    } catch (_) {
+      /* skip room tone if buffer creation fails */
+    }
   }
 
   function startMusic() {
