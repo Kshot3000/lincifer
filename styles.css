@@ -431,31 +431,44 @@ h1 {
 
 .hell-face {
   position: absolute;
-  width: clamp(72px, 18vw, 96px);
-  height: clamp(90px, 22.5vw, 120px);
-  border-radius: 10px;
+  width: clamp(84px, 22vw, 110px);
+  height: clamp(84px, 22vw, 110px);
+  border-radius: 50%;
   z-index: 10;
   cursor: grab;
   touch-action: none;
   will-change: left, top, transform;
-  padding: 2px;
-  background: transparent;
+  padding: 3px;
+  background: linear-gradient(145deg, #ff1a1a, #1a0000 55%, #8b0000);
   box-shadow:
-    0 0 16px rgba(255,26,26,.45),
-    0 8px 20px rgba(0,0,0,.45);
-  filter: drop-shadow(0 0 8px rgba(255,40,0,.35));
+    0 0 22px rgba(255,26,26,.75),
+    0 8px 24px rgba(0,0,0,.55);
 }
-.hell-face .hell-lindsay {
+.hell-face img {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  border-radius: 50%;
   pointer-events: none;
-  overflow: visible;
+  filter: contrast(1.15) saturate(0.4) brightness(0.6);
+}
+.hell-face-glow {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: inset 0 0 20px rgba(0,0,0,.6);
+  background: radial-gradient(circle at 50% 30%, transparent 40%, rgba(40,0,0,.5) 100%);
 }
 .hell-face.is-dragging {
   cursor: grabbing;
   z-index: 20;
-  filter: drop-shadow(0 0 16px rgba(255,60,0,.85)) brightness(1.08);
+  box-shadow:
+    0 0 30px rgba(255,26,26,.95),
+    0 12px 32px rgba(0,0,0,.7);
+  filter: brightness(1.1);
 }
 .hell-face.is-flying {
   cursor: grabbing;
@@ -598,67 +611,9 @@ h1 {
   100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
 }
 
-
-.hell-scream {
-  position: absolute;
-  z-index: 25;
-  pointer-events: none;
-  max-width: min(220px, 70vw);
-  padding: .45rem .7rem .55rem;
-  background: #fff8f0;
-  color: #1a0500;
-  border: 3px solid #1a0500;
-  border-radius: 16px;
-  box-shadow:
-    0 0 0 2px #ff1a1a,
-    0 8px 20px rgba(0,0,0,.55);
-  opacity: 0;
-  transform: scale(0.4) rotate(-6deg);
-  transition: opacity .18s ease, transform .22s cubic-bezier(.2,1.4,.4,1);
-}
-.hell-scream.show {
-  opacity: 1;
-  transform: scale(1) rotate(-2deg);
-}
-.hell-scream.hide {
-  opacity: 0;
-  transform: scale(0.85) translateY(-12px);
-  transition: opacity .3s ease, transform .3s ease;
-}
-.hell-scream-text {
-  display: block;
-  font-family: var(--horror), Creepster, cursive;
-  font-size: clamp(0.95rem, 3.6vw, 1.25rem);
-  letter-spacing: .04em;
-  line-height: 1.15;
-  text-align: center;
-  color: #8b0000;
-  text-shadow: 0 1px 0 #fff, 0 0 8px rgba(255,26,26,.35);
-  animation: scream-jitter .35s steps(2) infinite;
-}
-@keyframes scream-jitter {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(1px, -1px); }
-  50% { transform: translate(-1px, 1px); }
-  75% { transform: translate(1px, 0); }
-}
-.hell-scream-tail {
-  position: absolute;
-  left: 50%;
-  bottom: -14px;
-  width: 18px;
-  height: 18px;
-  margin-left: -9px;
-  background: #fff8f0;
-  border-right: 3px solid #1a0500;
-  border-bottom: 3px solid #1a0500;
-  transform: rotate(45deg);
-  box-shadow: 2px 2px 0 #ff1a1a;
-}
-
 @media (max-width: 480px) {
   .hell-stage { min-height: 360px; height: 420px; }
-  .hell-face { width: 78px; height: 98px; }
+  .hell-face { width: 92px; height: 92px; }
 }
 
 

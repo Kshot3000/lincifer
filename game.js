@@ -352,62 +352,6 @@
     };
   }
 
-  function clearScreamBubble() {
-    const existing = stage.querySelector(".hell-scream");
-    if (existing) existing.remove();
-  }
-
-  function showScreamBubble(cx, cy) {
-    clearScreamBubble();
-    const bubble = document.createElement("div");
-    bubble.className = "hell-scream";
-    bubble.setAttribute("aria-live", "assertive");
-    bubble.innerHTML =
-      '<span class="hell-scream-text">Satan help me!</span><span class="hell-scream-tail" aria-hidden="true"></span>';
-    stage.appendChild(bubble);
-
-    // position above impact; clamp inside stage
-    const bw = bubble.offsetWidth || 160;
-    const bh = bubble.offsetHeight || 48;
-    let left = cx - bw / 2;
-    let top = cy - bh - 28;
-    left = Math.max(6, Math.min(stage.clientWidth - bw - 6, left));
-    top = Math.max(4, Math.min(stage.clientHeight - bh - 4, top));
-    bubble.style.left = left + "px";
-    bubble.style.top = top + "px";
-
-    requestAnimationFrame(() => bubble.classList.add("show"));
-    clearTimeout(showScreamBubble._t);
-    showScreamBubble._t = setTimeout(() => {
-      bubble.classList.remove("show");
-      bubble.classList.add("hide");
-      setTimeout(() => bubble.remove(), 350);
-    }, 2200);
-  }
-
-  function screamSatanHelpMe() {
-    const phrase = "Satan help me!";
-    try {
-      if (typeof window.speechSynthesis === "undefined") return;
-      const synth = window.speechSynthesis;
-      synth.cancel();
-      const utter = new SpeechSynthesisUtterance(phrase);
-      utter.rate = 1.05;
-      utter.pitch = 1.35;
-      utter.volume = 1;
-      // Prefer a higher / feminine voice if available
-      const voices = synth.getVoices();
-      const pick =
-        voices.find((v) => /female|zira|samantha|karen|moira|tessa|google us english/i.test(v.name)) ||
-        voices.find((v) => /en(-|_)?us/i.test(v.lang)) ||
-        voices[0];
-      if (pick) utter.voice = pick;
-      synth.speak(utter);
-    } catch (_) {
-      // bubble-only fallback
-    }
-  }
-
   function resetFace(animate) {
     cancelAnimationFrame(throwRaf);
     throwRaf = null;
@@ -417,10 +361,6 @@
     face.style.transform = "";
     face.style.opacity = "1";
     face.style.pointerEvents = "auto";
-    clearScreamBubble();
-    try {
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-    } catch (_) {}
     const home = homePosition();
     if (animate) {
       face.style.transition = "left .35s ease, top .35s ease, opacity .35s ease, transform .35s ease";
@@ -517,8 +457,6 @@
     const c = faceCenter();
     burstSplash(c.x, c.y);
     spawnHitSparks(c.x, c.y);
-    showScreamBubble(c.x, c.y - faceHeight() * 0.15);
-    screamSatanHelpMe();
     pit.classList.add("is-feeding");
     showToast();
 
@@ -701,7 +639,6 @@
   face.addEventListener("pointercancel", onPointerUp);
 
   face.querySelector("img")?.addEventListener("dragstart", (e) => e.preventDefault());
-  face.querySelector("svg")?.addEventListener("dragstart", (e) => e.preventDefault());
 
   if (resetBtn) {
     resetBtn.addEventListener("click", () => resetFace(true));
@@ -711,14 +648,6 @@
     resizeCanvas();
     if (!dragging && !cast) resetFace(false);
   });
-
-  // Chrome loads voices async
-  if (typeof window.speechSynthesis !== "undefined") {
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.addEventListener("voiceschanged", () => {
-      window.speechSynthesis.getVoices();
-    });
-  }
 
   resizeCanvas();
   resetFace(false);
